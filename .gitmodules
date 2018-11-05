@@ -1,0 +1,9 @@
+[submodule "RejigCoordinator"]
+	path = RejigCoordinator
+	url = https://github.com/arunangshu-chatterjee/RejigCoordinator
+[submodule "RejigInterface"]
+	path = RejigInterface
+	url = https://github.com/Likhit/RejigInterface.git
+[submodule "memcached"]
+	path = memcached
+	url = https://github.com/Likhit/memcached
