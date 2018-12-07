@@ -7,3 +7,6 @@
 [submodule "memcached"]
 	path = memcached
 	url = https://github.com/Likhit/memcached
+[submodule "YCSB"]
+	path = YCSB
+	url = https://github.com/Likhit/YCSB-Client-MySQL-memcached.git
