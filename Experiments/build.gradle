@@ -7,7 +7,7 @@ plugins {
 }
 
 // Define the main class for the application
-mainClassName = 'edu.usc.cs550.rejig.experiments.ConstantConfig'
+mainClassName = 'edu.usc.cs550.rejig.experiments.Experiment'
 
 def protobufVersion = '3.6.1'
 def grpcVersion = '1.16.1'

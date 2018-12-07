@@ -66,7 +66,7 @@ set CMD_LINE_ARGS=%*
 set CLASSPATH=%APP_HOME%\lib\Experiments.jar;%APP_HOME%\lib\RejigInterface.jar;%APP_HOME%\lib\grpc-protobuf-1.16.1.jar;%APP_HOME%\lib\protobuf-java-3.6.1.jar;%APP_HOME%\lib\grpc-netty-shaded-1.16.1.jar;%APP_HOME%\lib\grpc-stub-1.16.1.jar;%APP_HOME%\lib\grpc-protobuf-lite-1.16.1.jar;%APP_HOME%\lib\grpc-core-1.16.1.jar;%APP_HOME%\lib\guava-26.0-android.jar;%APP_HOME%\lib\proto-google-common-protos-1.0.0.jar;%APP_HOME%\lib\grpc-context-1.16.1.jar;%APP_HOME%\lib\gson-2.7.jar;%APP_HOME%\lib\opencensus-contrib-grpc-metrics-0.12.3.jar;%APP_HOME%\lib\opencensus-api-0.12.3.jar;%APP_HOME%\lib\error_prone_annotations-2.2.0.jar;%APP_HOME%\lib\jsr305-3.0.2.jar;%APP_HOME%\lib\animal-sniffer-annotations-1.17.jar;%APP_HOME%\lib\checker-compat-qual-2.5.2.jar;%APP_HOME%\lib\j2objc-annotations-1.1.jar
 
 @rem Execute Experiments
-"%JAVA_EXE%" %DEFAULT_JVM_OPTS% %JAVA_OPTS% %EXPERIMENTS_OPTS%  -classpath "%CLASSPATH%" edu.usc.cs550.rejig.experiments.ConstantConfig %CMD_LINE_ARGS%
+"%JAVA_EXE%" %DEFAULT_JVM_OPTS% %JAVA_OPTS% %EXPERIMENTS_OPTS%  -classpath "%CLASSPATH%" edu.usc.cs550.rejig.experiments.Experiment %CMD_LINE_ARGS%
 
 :end
 @rem End local scope for the variables with windows NT shell

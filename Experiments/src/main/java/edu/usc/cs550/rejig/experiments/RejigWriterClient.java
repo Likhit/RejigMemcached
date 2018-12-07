@@ -10,19 +10,19 @@ import io.grpc.StatusRuntimeException;
 
 import java.util.concurrent.TimeUnit;
 
-public class ConstantConfig {
+public class RejigWriterClient {
   private ManagedChannel channel;
 
   private RejigWriterGrpc.RejigWriterBlockingStub blockingStub;
 
-  public ConstantConfig(String host, int port) {
+  public RejigWriterClient(String host, int port) {
     this(ManagedChannelBuilder.forAddress(host, port)
       .usePlaintext()
       .build()
     );
   }
 
-  ConstantConfig(ManagedChannel channel) {
+  RejigWriterClient(ManagedChannel channel) {
     this.channel = channel;
     blockingStub = RejigWriterGrpc.newBlockingStub(channel);
   }
@@ -46,15 +46,5 @@ public class ConstantConfig {
       throw new RuntimeException(e);
     }
     return response;
-  }
-
-  public static void main(String[] args) {
-    FragmentList ls = FragmentList.newBuilder()
-      .addAddress("localhost:11212")
-      .addAddress("localhost:11213")
-      .build();
-    ConstantConfig exp = new ConstantConfig("localhost", 50031);
-    RejigConfig response = exp.setConfig(ls);
-    System.out.println(response.toString());
   }
 }
