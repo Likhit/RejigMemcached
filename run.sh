@@ -9,8 +9,8 @@ function declare_common {
   # IP address of all VMs.
   vm1="40.121.91.22"
   vm2="23.96.25.140"
-  vm3="23.96.11.180"
-  vm4="23.96.16.83"
+  vm3="137.135.103.167"
+  vm4="137.117.102.51"
   vm5="168.62.58.101"
   vm6="168.62.61.62"
   vms=($vm1 $vm2 $vm3 $vm4 $vm5 $vm6)
@@ -35,6 +35,8 @@ function declare_common {
   # YCSB attrs
   workloads=("workloada" "workloadb" "workloadc")
   threads=(1 10 100)
+  exp_timeouts=(60 30 15 8)
+  access_pattern="zipfian"
 }
 
 # Install dependencies
@@ -120,7 +122,10 @@ function start_memcached {
 function stop_memcached {
   local host=$1
   local port=$2
-  local LOG_PATH="$PWD/Logs/memcached_${host}_${port}.txt"
+  local workload=$3
+  local threads=$4
+  local timeout=$5
+  local LOG_PATH="$PWD/Logs/memcached_${workload}_${threads}_${timeout}_${port}.txt"
   { echo "stats"; sleep 2; echo "shutdown"; sleep 2; } | telnet $host $port | tee $LOG_PATH
   echo "Done!!"
 }
@@ -165,6 +170,8 @@ function run_workload {
   local db_host=$3
   local coordinator_host=$4
   local coordinator_port=$5
+  local timeout=$6
+  local access_pattern=$7
   local LOG_PATH="$PWD/Logs/"
   local YCSB_PATH="${PWD}/RejigMemcached/YCSB/"
   cd $YCSB_PATH
@@ -176,8 +183,9 @@ function run_workload {
     -p db.driver=com.mysql.jdbc.Driver \
     -p db.url="jdbc:mysql://$db_host:3306/ycsb?useSSL=false" \
     -p db.user=user -p db.passwd=123456 -p status.interval=1 \
+    -p requestdistribution=$access_pattern \
     -p coordinator.host="$coordinator_host" \
-    -p coordinator.port="$coordinator_port" > "$LOG_PATH/warmup_${workload}_${threads}.txt"
+    -p coordinator.port="$coordinator_port" > "$LOG_PATH/warmup_${workload}_${threads}_${timeout}.txt"
 
   # Run workload
   sudo "./bin/ycsb" run jdbc-memcached \
@@ -186,9 +194,10 @@ function run_workload {
     -p db.driver=com.mysql.jdbc.Driver \
     -p db.url="jdbc:mysql://$db_host:3306/ycsb?useSSL=false" \
     -p db.user=user -p db.passwd=123456 -p status.interval=1 \
+    -p requestdistribution=$access_pattern \
     -p coordinator.host="$coordinator_host" \
     -p coordinator.port="$coordinator_port" \
-    -s -threads "$threads" > "$LOG_PATH/run_${workload}_${threads}.txt"
+    -s -threads "$threads" > "$LOG_PATH/run_${workload}_${threads}_${timeout}.txt"
 }
 
 function run_experiment {
@@ -202,7 +211,7 @@ function run_experiment {
   local threads=$8
   local LOG_PATH="$PWD/Logs/"
   local EXP_PATH="${PWD}/RejigMemcached/distribution/Experiments/bin/Experiments"
-  sudo $EXP_PATH changeEveryNSecs $coord_host $coord_port $clearence $timeout $recovery $death > "$LOG_PATH/exp_${workload}_${threads}.txt"
+  sudo $EXP_PATH changeEveryNSecs $coord_host $coord_port $clearence $timeout $recovery $death > "$LOG_PATH/exp_${workload}_${threads}_${timeout}.txt"
 }
 
 function main {
@@ -210,7 +219,7 @@ function main {
 
   for vm in "${vms[@]}"
   do
-    # ssh "$user@$vm" "$(typeset -f install); install"
+    ssh "$user@$vm" "$(typeset -f install); install"
     ssh "$user@$vm" "$(typeset -f setup_logs); setup_logs"
   done
 
@@ -223,44 +232,50 @@ function main {
   do
     for thread in "${threads[@]}"
     do
-      for cmi in "${cmi_vms[@]}"
+      for timeout in "${exp_timeouts[@]}"
       do
-        for port in "${cmi_ports[@]}"
+        echo "${workload}_${thread}_${timeout}"
+        for cmi in "${cmi_vms[@]}"
         do
-          ssh "$user@$cmi" "$(typeset -f start_memcached); start_memcached $user 2048 $port"
+          for port in "${cmi_ports[@]}"
+          do
+            ssh "$user@$cmi" "$(typeset -f start_memcached); start_memcached $user 2048 $port"
+          done
         done
-      done
 
-      for vm in "${zookeeper_vms[@]}"
-      do
-        ssh "$user@$vm" "$(typeset -f start_zookeeper); $(typeset -f declare_common); declare_common; start_zookeeper"
-      done
-
-      ssh -f "$user@$coordinator_reader_vm" "sh -c '$(typeset -f start_coordinator_reader); start_coordinator_reader ${zookeeper_vms[0]}:$zookeeper_client_port $coordinator_reader_port'"
-      ssh -f "$user@$coordinator_writer_vm" "sh -c '$(typeset -f start_coordinator_writer); start_coordinator_writer ${zookeeper_vms[0]}:$zookeeper_client_port $coordinator_writer_port'"
-
-      sleep 5
-
-      ssh -f "$user@$experiment_vm" "sh -c '$(typeset -f run_experiment); run_experiment $coordinator_writer_vm $coordinator_writer_port 180 60 10 600 $workload $thread'"
-      ssh "$user@$ycsb_vm" "$(typeset -f run_workload); run_workload $workload $thread $db_vm $coordinator_reader_vm $coordinator_reader_port"
-      ssh "$user@$experiment_vm" "sudo pkill -f Experiments"
-
-      ssh "$user@$coordinator_reader_vm" "sudo pkill -f RejigCoordinator"
-      ssh "$user@$coordinator_writer_vm" "sudo pkill -f RejigCoordinator"
-
-      for vm in "${zookeeper_vms[@]}"
-      do
-        ssh "$user@$vm" "$(typeset -f stop_zookeeper); stop_zookeeper"
-      done
-
-      for cmi in "${cmi_vms[@]}"
-      do
-        for port in "${cmi_ports[@]}"
+        for vm in "${zookeeper_vms[@]}"
         do
-          ssh "$user@$cmi" "$(typeset -f stop_memcached); stop_memcached $cmi $port"
+          ssh "$user@$vm" "$(typeset -f start_zookeeper); $(typeset -f declare_common); declare_common; start_zookeeper"
         done
-      done
 
+        ssh -f "$user@$coordinator_reader_vm" "sh -c '$(typeset -f start_coordinator_reader); start_coordinator_reader ${zookeeper_vms[0]}:$zookeeper_client_port $coordinator_reader_port'"
+        ssh -f "$user@$coordinator_writer_vm" "sh -c '$(typeset -f start_coordinator_writer); start_coordinator_writer ${zookeeper_vms[0]}:$zookeeper_client_port $coordinator_writer_port'"
+
+        sleep 5
+
+        ssh -f "$user@$experiment_vm" "sh -c '$(typeset -f run_experiment); run_experiment $coordinator_writer_vm $coordinator_writer_port 180 $timeout 5 600 $workload $thread'"
+        ssh "$user@$ycsb_vm" "$(typeset -f run_workload); run_workload $workload $thread $db_vm $coordinator_reader_vm $coordinator_reader_port $timeout $access_pattern"
+        ssh "$user@$experiment_vm" "sudo pkill -f Experiments"
+
+        ssh "$user@$coordinator_reader_vm" "sudo pkill -f RejigCoordinator"
+        ssh "$user@$coordinator_writer_vm" "sudo pkill -f RejigCoordinator"
+
+        for vm in "${zookeeper_vms[@]}"
+        do
+          ssh "$user@$vm" "$(typeset -f stop_zookeeper); stop_zookeeper"
+        done
+
+        for cmi in "${cmi_vms[@]}"
+        do
+          for port in "${cmi_ports[@]}"
+          do
+            ssh "$user@$cmi" "$(typeset -f stop_memcached); stop_memcached $cmi $port $workload $thread $timeout"
+          done
+        done
+
+        echo "New iter!!!!!"
+        sleep 5
+      done
     done
   done
 

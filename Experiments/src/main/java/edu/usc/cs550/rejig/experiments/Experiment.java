@@ -77,7 +77,7 @@ public class Experiment {
     List<String> fragments = config.getFragmentList().stream()
       .map(f -> String.format("%s,%s", f.getId(), f.getAddress()))
       .collect(Collectors.toList());
-    String str = String.format("%s\t%s", config.getId(), String.join(",", fragments));
+    String str = String.format("%s\t%s", config.getId(), String.join("\t", fragments));
     System.out.println(str);
   }
 }
