@@ -7,10 +7,10 @@ user=$1
 # This is because currently the experiment has hardcoded ips.
 function declare_common {
   # IP address of all VMs.
-  vm1="40.121.91.22"
-  vm2="23.96.25.140"
-  vm3="137.135.103.167"
-  vm4="137.117.102.51"
+  vm1="13.68.179.205"
+  vm2="40.87.91.240"
+  vm3="40.76.37.110"
+  vm4="40.76.40.194"
   vm5="168.62.58.101"
   vm6="168.62.61.62"
   vms=($vm1 $vm2 $vm3 $vm4 $vm5 $vm6)
@@ -214,6 +214,21 @@ function run_experiment {
   sudo $EXP_PATH changeEveryNSecs $coord_host $coord_port $clearence $timeout $recovery $death > "$LOG_PATH/exp_${workload}_${threads}_${timeout}.txt"
 }
 
+function start_trace {
+  local workload=$1
+  local threads=$2
+  local timeout=$3
+  local SAR_PATH="$PWD/Logs/sar_${workload}_${threads}_${timeout}.txt"
+  local IOSTAT_PATH="$PWD/Logs/iostat_${workload}_${threads}_${timeout}.txt"
+  sar -u 2 43200 > $SAR_PATH
+  iostat -d 2 43200 > $IOSTAT_PATH
+}
+
+function stop_trace {
+  sudo pkill -f sar
+  sudo pkill -f iostat
+}
+
 function main {
   declare_common
 
@@ -235,6 +250,7 @@ function main {
       for timeout in "${exp_timeouts[@]}"
       do
         echo "${workload}_${thread}_${timeout}"
+
         for cmi in "${cmi_vms[@]}"
         do
           for port in "${cmi_ports[@]}"
@@ -251,11 +267,21 @@ function main {
         ssh -f "$user@$coordinator_reader_vm" "sh -c '$(typeset -f start_coordinator_reader); start_coordinator_reader ${zookeeper_vms[0]}:$zookeeper_client_port $coordinator_reader_port'"
         ssh -f "$user@$coordinator_writer_vm" "sh -c '$(typeset -f start_coordinator_writer); start_coordinator_writer ${zookeeper_vms[0]}:$zookeeper_client_port $coordinator_writer_port'"
 
-        sleep 5
+        sleep 2
+
+        for vm in "${vms[@]}"
+        do
+          ssh "$user@$vm" "$(typeset -f start_trace); start_trace $workload $thread $timeout"
+        done
 
         ssh -f "$user@$experiment_vm" "sh -c '$(typeset -f run_experiment); run_experiment $coordinator_writer_vm $coordinator_writer_port 180 $timeout 5 600 $workload $thread'"
         ssh "$user@$ycsb_vm" "$(typeset -f run_workload); run_workload $workload $thread $db_vm $coordinator_reader_vm $coordinator_reader_port $timeout $access_pattern"
         ssh "$user@$experiment_vm" "sudo pkill -f Experiments"
+
+        for vm in "${vms[@]}"
+        do
+          ssh "$user@$vm" "$(typeset -f stop_trace); stop_trace"
+        done
 
         ssh "$user@$coordinator_reader_vm" "sudo pkill -f RejigCoordinator"
         ssh "$user@$coordinator_writer_vm" "sudo pkill -f RejigCoordinator"
