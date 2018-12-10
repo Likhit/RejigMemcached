@@ -36,18 +36,18 @@ public class Experiment {
   public static void changeEveryNSecs(RejigWriterClient client, int clearence, int timeout, int recovery, int death) throws InterruptedException {
     Random rand = new Random(23423432);
     final FragmentList init = FragmentList.newBuilder()
-      .addAddress("40.121.91.22:11220").addAddress("40.121.91.22:11221")
-      .addAddress("40.121.91.22:11222").addAddress("40.121.91.22:11223")
-      .addAddress("40.121.91.22:11224")
-      .addAddress("23.96.25.140:11220").addAddress("23.96.25.140:11221")
-      .addAddress("23.96.25.140:11222").addAddress("23.96.25.140:11223")
-      .addAddress("23.96.25.140:11224")
-      .addAddress("23.96.11.180:11220").addAddress("23.96.11.180:11221")
-      .addAddress("23.96.11.180:11222").addAddress("23.96.11.180:11223")
-      .addAddress("23.96.11.180:11224")
-      .addAddress("23.96.16.83:11220").addAddress("23.96.16.83:11221")
-      .addAddress("23.96.16.83:11222").addAddress("23.96.16.83:11223")
-      .addAddress("23.96.16.83:11224")
+      .addAddress("13.68.179.205:11220").addAddress("13.68.179.205:11221")
+      .addAddress("13.68.179.205:11222").addAddress("13.68.179.205:11223")
+      .addAddress("13.68.179.205:11224")
+      .addAddress("40.87.91.240:11220").addAddress("40.87.91.240:11221")
+      .addAddress("40.87.91.240:11222").addAddress("40.87.91.240:11223")
+      .addAddress("40.87.91.240:11224")
+      .addAddress("40.76.37.110:11220").addAddress("40.76.37.110:11221")
+      .addAddress("40.76.37.110:11222").addAddress("40.76.37.110:11223")
+      .addAddress("40.76.37.110:11224")
+      .addAddress("40.76.40.194:11220").addAddress("40.76.40.194:11221")
+      .addAddress("40.76.40.194:11222").addAddress("40.76.40.194:11223")
+      .addAddress("40.76.40.194:11224")
       .build();
     final int numFragments = init.getAddressCount();
     RejigConfig response = client.setConfig(init);

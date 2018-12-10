@@ -44,6 +44,7 @@ function install {
   sudo apt-get update
   sudo apt-get --yes install maven
   sudo apt-get install -y mysql-server
+  sudo apt-get install -y sysstat
 
   # Install from repo
   local PROJECT_PATH="$PWD/RejigMemcached/"
@@ -271,7 +272,7 @@ function main {
 
         for vm in "${vms[@]}"
         do
-          ssh "$user@$vm" "$(typeset -f start_trace); start_trace $workload $thread $timeout"
+          ssh -f "$user@$vm" "sh -c '$(typeset -f start_trace); start_trace $workload $thread $timeout'"
         done
 
         ssh -f "$user@$experiment_vm" "sh -c '$(typeset -f run_experiment); run_experiment $coordinator_writer_vm $coordinator_writer_port 180 $timeout 5 600 $workload $thread'"
