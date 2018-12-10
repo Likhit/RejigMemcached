@@ -17,7 +17,7 @@ function declare_common {
 
   # IP address for each process.
   cmi_vms=($vm1 $vm2 $vm3 $vm4)
-  zookeeper_vms=($vm5)
+  zookeeper_vms=($vm1 $vm5 $vm6)
   db_vm=$vm5
   coordinator_writer_vm=$vm5
   coordinator_reader_vm=$vm6
@@ -239,10 +239,10 @@ function main {
     ssh "$user@$vm" "$(typeset -f setup_logs); setup_logs"
   done
 
-  # ssh "$user@$db_vm" "$(typeset -f start_db); start_db"
-  # echo "You may need to change the bind-address on the mysql installation to connect remotely."
+  ssh "$user@$db_vm" "$(typeset -f start_db); start_db"
+  echo "You may need to change the bind-address on the mysql installation to connect remotely."
 
-  # ssh "$user@$ycsb_vm" "$(typeset -f load_db); load_db $db_vm"
+  ssh "$user@$ycsb_vm" "$(typeset -f load_db); load_db $db_vm"
 
   for workload in "${workloads[@]}"
   do
@@ -306,7 +306,7 @@ function main {
     done
   done
 
-  # ssh "$user@$db_vm" "$(typeset -f stop_db); stop_db"
+  ssh "$user@$db_vm" "$(typeset -f stop_db); stop_db"
 }
 
 main
